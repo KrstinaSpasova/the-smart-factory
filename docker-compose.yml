@@ -4,13 +4,13 @@ services:
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
-      - ./data:/app/data:ro
-      - ./backend/memory:/app/memory
+      - ./data:/app/data
+      - "./data/Database - Testcase_agentic_ai_V1.0.zip.csv:/app/data/sensor_data.csv:ro"
     env_file:
       - .env
     restart: unless-stopped
 
-  frontend:
+  streamlit:
     build: ./frontend
     ports:
       - "${FRONTEND_PORT:-8501}:8501"
