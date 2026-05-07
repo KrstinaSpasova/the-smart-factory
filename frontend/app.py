@@ -28,7 +28,7 @@ if prompt:
                 resp = requests.post(
                     f"{BACKEND_URL}/chat",
                     json={"message": prompt, "session_id": st.session_state.session_id},
-                    timeout=60,
+                    timeout=300,
                 )
                 resp.raise_for_status()
                 reply = resp.json()["reply"]

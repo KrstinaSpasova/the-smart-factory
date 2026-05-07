@@ -49,22 +49,27 @@ def compute_utilization_stats(ipc_id: str) -> dict:
 
 
 def get_fleet_summary() -> dict:
-    """Aggregate counts. Imports classify_ipc lazily to avoid circular import."""
-    from app.tools.classifier_tools import classify_ipc  # local import on purpose
-    # Use unfiltered data for IPC list so outlier-only IPCs are still counted
-    all_df = _load_all()
-    ipcs = all_df["IPC"].unique()
-    labels = {ipc: classify_ipc(ipc)["label"] for ipc in ipcs}
-    count_per_label = pd.Series(labels).value_counts().to_dict()
+    """Return fleet-wide IPC counts by utilisation label plus a per-factory breakdown."""
+    df = _load_raw()
+    p95 = df.groupby("IPC")["cpu_pct"].quantile(0.95)
+
+    def _label(v):
+        if v < 30:  return "underutilized"
+        if v < 65:  return "healthy"
+        if v < 85:  return "at_risk"
+        return "overloaded"
+
+    labels = p95.apply(_label)
+    count_per_label = labels.value_counts().to_dict()
     factory_breakdown = (
-        all_df.drop_duplicates("IPC")
-              .groupby("Data Factory")["IPC"].nunique()
-              .to_dict()
+        _load_all().drop_duplicates("IPC")
+                   .groupby("Data Factory")["IPC"].nunique()
+                   .to_dict()
     )
     return {
-        "total_ipcs": int(len(ipcs)),
+        "total_ipcs": int(len(p95)),
         "count_per_label": {k: int(v) for k, v in count_per_label.items()},
-        "factory_breakdown": {k: int(v) for k, v in factory_breakdown.items()},
+        "factory_breakdown": {int(k): int(v) for k, v in factory_breakdown.items()},
     }
 
 
