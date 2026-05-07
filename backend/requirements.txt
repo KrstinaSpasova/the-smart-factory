@@ -1,0 +1,9 @@
+langchain
+langchain-anthropic
+langfuse
+pandas
+openpyxl
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic
