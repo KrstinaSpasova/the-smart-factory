@@ -1,5 +1,6 @@
 langchain
-langchain-groq
+langchain-openai
+langgraph
 langfuse
 pandas
 openpyxl

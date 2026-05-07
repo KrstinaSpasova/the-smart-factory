@@ -1,0 +1,86 @@
+"""Sensor data tools — read-only access to the CSV for the Fleet Analyst agent."""
+import os
+import logging
+from functools import lru_cache
+import pandas as pd
+
+log = logging.getLogger(__name__)
+SENSOR_DATA_PATH = os.getenv("SENSOR_DATA_PATH", "/app/data/sensor_data.csv")
+
+
+@lru_cache(maxsize=1)
+def _load_all() -> pd.DataFrame:
+    """Load the CSV once per process with all derived columns, before outlier filtering."""
+    df = pd.read_csv(
+        SENSOR_DATA_PATH,
+        sep=";", decimal=",", dayfirst=True, parse_dates=["time"],
+    )
+    df["CpuMHz_num"] = df["CpuMHz"].astype(str).str.split().str[0].astype(float)
+    df["cpu_pct"] = 100.0 * df["AvgValue"] / df["CpuMHz_num"]
+    return df
+
+
+@lru_cache(maxsize=1)
+def _load_raw() -> pd.DataFrame:
+    """Filtered view — cpu_pct <= 100 (drops physically impossible readings)."""
+    return _load_all()[_load_all()["cpu_pct"] <= 100].copy()
+
+
+def load_sensor_data(ipc_id: str | None = None) -> pd.DataFrame:
+    df = _load_raw()
+    if ipc_id is not None:
+        df = df[df["IPC"] == ipc_id].copy()
+    return df
+
+
+def compute_utilization_stats(ipc_id: str) -> dict:
+    """Return mean, p50, p95, and max CPU utilisation % plus days_observed for a single IPC."""
+    s = load_sensor_data(ipc_id)["cpu_pct"]
+    if s.empty:
+        return {"ipc_id": ipc_id, "mean": None, "p50": None, "p95": None, "max": None, "days_observed": 0}
+    return {
+        "ipc_id": ipc_id,
+        "mean":  float(s.mean()),
+        "p50":   float(s.quantile(0.50)),
+        "p95":   float(s.quantile(0.95)),
+        "max":   float(s.max()),
+        "days_observed": int(load_sensor_data(ipc_id)["time"].dt.normalize().nunique()),
+    }
+
+
+def get_fleet_summary() -> dict:
+    """Return fleet-wide IPC counts by utilisation label plus a per-factory breakdown."""
+    df = _load_raw()
+    p95 = df.groupby("IPC")["cpu_pct"].quantile(0.95)
+
+    def _label(v):
+        if v < 30:  return "underutilized"
+        if v < 65:  return "healthy"
+        if v < 85:  return "at_risk"
+        return "overloaded"
+
+    labels = p95.apply(_label)
+    count_per_label = labels.value_counts().to_dict()
+    factory_breakdown = (
+        _load_all().drop_duplicates("IPC")
+                   .groupby("Data Factory")["IPC"].nunique()
+                   .to_dict()
+    )
+    return {
+        "total_ipcs": int(len(p95)),
+        "count_per_label": {k: int(v) for k, v in count_per_label.items()},
+        "factory_breakdown": {int(k): int(v) for k, v in factory_breakdown.items()},
+    }
+
+
+def get_ipc_history(ipc_id: str, days: int = 30) -> list[dict]:
+    """Return daily CPU utilisation % records for one IPC over the last N days."""
+    df = load_sensor_data(ipc_id).sort_values("time")
+    if df.empty:
+        return []
+    cutoff = df["time"].max() - pd.Timedelta(days=days)
+    df = df[df["time"] >= cutoff]
+    return [
+        {"date": t.strftime("%Y-%m-%d"), "cpu_pct": float(p)}
+        for t, p in zip(df["time"], df["cpu_pct"])
+    ]

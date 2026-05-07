@@ -1,0 +1,6 @@
+[
+  {"id": "r1", "label": "underutilized", "conditions": [{"feature": "cpu_p95", "operator": "<",  "value": 30}]},
+  {"id": "r2", "label": "healthy",       "conditions": [{"feature": "cpu_p95", "operator": ">=", "value": 30}, {"feature": "cpu_p95", "operator": "<",  "value": 65}]},
+  {"id": "r3", "label": "at_risk",       "conditions": [{"feature": "cpu_p95", "operator": ">=", "value": 65}, {"feature": "cpu_p95", "operator": "<",  "value": 85}]},
+  {"id": "r4", "label": "overloaded",    "conditions": [{"feature": "cpu_p95", "operator": ">=", "value": 85}]}
+]
