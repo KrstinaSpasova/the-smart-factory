@@ -34,6 +34,7 @@ def load_sensor_data(ipc_id: str | None = None) -> pd.DataFrame:
 
 
 def compute_utilization_stats(ipc_id: str) -> dict:
+    """Return mean, p50, p95, and max CPU utilisation % plus days_observed for a single IPC."""
     s = load_sensor_data(ipc_id)["cpu_pct"]
     if s.empty:
         return {"ipc_id": ipc_id, "mean": None, "p50": None, "p95": None, "max": None, "days_observed": 0}
@@ -68,6 +69,7 @@ def get_fleet_summary() -> dict:
 
 
 def get_ipc_history(ipc_id: str, days: int = 30) -> list[dict]:
+    """Return daily CPU utilisation % records for one IPC over the last N days."""
     df = load_sensor_data(ipc_id).sort_values("time")
     if df.empty:
         return []

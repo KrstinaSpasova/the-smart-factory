@@ -1,9 +1,9 @@
 import os
 from langchain_openai import AzureChatOpenAI
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langfuse.langchain import CallbackHandler
-from backend.app.agents.memory_manager import get_session_context
+from app.agents.memory_manager import get_session_context
 
 SYSTEM_PROMPT = (
     "You are the Smart Factory Operations Center assistant. "
@@ -33,25 +33,19 @@ def _get_llm() -> AzureChatOpenAI:
 
 
 def _build_tools() -> list:
-    # --- Hour 2 wiring point ---
-    # When M's modules are merged to master and you rebase, replace this block:
-    #
-    # from backend.app.tools.sensor_tools import (
-    #     compute_utilization_stats, get_fleet_summary, get_ipc_history
-    # )
-    # from backend.app.tools.classifier_tools import classify_ipc, flag_anomalies
-    # from backend.app.tools.memory_tools import (
-    #     load_past_decisions, save_decision, get_session_context
-    # )
-    # from langchain_core.tools import tool
-    # return [
-    #     tool(compute_utilization_stats),
-    #     tool(classify_ipc),
-    #     tool(get_fleet_summary),
-    #     tool(load_past_decisions),
-    #     tool(save_decision),
-    # ]
-    return []
+    from app.tools.sensor_tools import compute_utilization_stats, get_fleet_summary, get_ipc_history
+    from app.tools.classifier_tools import classify_ipc, flag_anomalies
+    from app.tools.memory_tools import load_past_decisions, save_decision
+    from langchain_core.tools import tool
+    return [
+        tool(compute_utilization_stats),
+        tool(classify_ipc),
+        tool(get_fleet_summary),
+        tool(get_ipc_history),
+        tool(flag_anomalies),
+        tool(load_past_decisions),
+        tool(save_decision),
+    ]
 
 
 def orchestrator_invoke(message: str, session_id: str = "default") -> dict:
@@ -62,10 +56,10 @@ def orchestrator_invoke(message: str, session_id: str = "default") -> dict:
     context = get_session_context()
     system = SYSTEM_PROMPT + f"\n\nPast operator decisions for context:\n{context}"
 
-    agent = create_agent(
+    agent = create_react_agent(
         model=_get_llm(),
         tools=_build_tools(),
-        system_prompt=system,
+        state_modifier=system,
         checkpointer=_checkpointer,
     )
 
@@ -82,5 +76,5 @@ def orchestrator_invoke(message: str, session_id: str = "default") -> dict:
     return {
         "reply": reply,
         "session_id": session_id,
-        "trace_id": langfuse_handler.last_trace_id,
+        "trace_id": getattr(langfuse_handler, "last_trace_id", None),
     }

@@ -3,6 +3,7 @@ from app.tools.sensor_tools import compute_utilization_stats, _load_raw
 
 
 def classify_ipc(ipc_id: str) -> dict:
+    """Classify a single IPC as underutilized/healthy/at_risk/overloaded using cpu_p95 thresholds."""
     stats = compute_utilization_stats(ipc_id)
     p95 = stats["p95"]
     if p95 is None:

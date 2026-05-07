@@ -1,6 +1,6 @@
 import os
 from langchain_openai import AzureChatOpenAI
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 
 SYSTEM_PROMPT = (
     "You are the Fleet Analyst for a Smart Factory IPC fleet. "
@@ -25,22 +25,16 @@ def _get_llm() -> AzureChatOpenAI:
 
 
 def _build_tools() -> list:
-    # --- Hour 2 wiring point ---
-    # When M's modules are merged to master and you rebase, replace this block:
-    #
-    # from backend.app.tools.sensor_tools import (
-    #     compute_utilization_stats, get_fleet_summary, get_ipc_history
-    # )
-    # from backend.app.tools.classifier_tools import classify_ipc, flag_anomalies
-    # from langchain_core.tools import tool
-    # return [
-    #     tool(compute_utilization_stats),
-    #     tool(get_fleet_summary),
-    #     tool(get_ipc_history),
-    #     tool(classify_ipc),
-    #     tool(flag_anomalies),
-    # ]
-    return []
+    from app.tools.sensor_tools import compute_utilization_stats, get_fleet_summary, get_ipc_history
+    from app.tools.classifier_tools import classify_ipc, flag_anomalies
+    from langchain_core.tools import tool
+    return [
+        tool(compute_utilization_stats),
+        tool(get_fleet_summary),
+        tool(get_ipc_history),
+        tool(classify_ipc),
+        tool(flag_anomalies),
+    ]
 
 
 def fleet_analyst_invoke(query: str) -> str:
@@ -49,10 +43,10 @@ def fleet_analyst_invoke(query: str) -> str:
     Stateless: no checkpointer, each query is independent.
     Returns a plain-text analysis report.
     """
-    agent = create_agent(
+    agent = create_react_agent(
         model=_get_llm(),
         tools=_build_tools(),
-        system_prompt=SYSTEM_PROMPT,
+        state_modifier=SYSTEM_PROMPT,
     )
     result = agent.invoke({"messages": [{"role": "user", "content": query}]})
     return result["messages"][-1].content

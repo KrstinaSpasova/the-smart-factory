@@ -46,6 +46,7 @@ def init_db() -> None:
 
 def save_decision(ipc_id: str, action: str, rationale: str, status: str,
                   operator_note: str | None = None) -> int:
+    """Persist an operator decision (approved/rejected/deferred) to SQLite and return the row id."""
     init_db()
     with _conn() as c:
         cur = c.execute(
@@ -57,6 +58,7 @@ def save_decision(ipc_id: str, action: str, rationale: str, status: str,
 
 
 def load_past_decisions(ipc_id: str | None = None) -> list[dict]:
+    """Load all past decisions from SQLite, optionally filtered to a single IPC."""
     init_db()
     with _conn() as c:
         if ipc_id:
