@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python -c \"import pptx; print\\(pptx.__version__\\)\")",
+      "Bash(python3 -c \"import pptx; print\\(pptx.__version__\\)\")",
+      "PowerShell(python --version 2>&1)",
+      "PowerShell(py --version 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Jelmer\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.14.4-windows-x86_64-none\\\\python.exe\" --version 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Jelmer\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.14.4-windows-x86_64-none\\\\python.exe\" -c \"import pptx; print\\(pptx.__version__\\)\" 2>&1)",
+      "PowerShell(uv pip install python-pptx 2>&1)",
+      "PowerShell(uv pip install python-pptx --system 2>&1)",
+      "PowerShell(uv run --with python-pptx python -c \"import pptx; print\\('ok'\\)\" 2>&1)",
+      "PowerShell(uv run --with python-pptx \"c:\\\\Users\\\\Jelmer\\\\Documents\\\\Itility\\\\the-smart-factory\\\\generate_presentation.py\" 2>&1)"
+    ]
+  }
+}
