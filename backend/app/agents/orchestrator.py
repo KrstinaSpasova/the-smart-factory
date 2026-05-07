@@ -59,7 +59,7 @@ def orchestrator_invoke(message: str, session_id: str = "default") -> dict:
     agent = create_react_agent(
         model=_get_llm(),
         tools=_build_tools(),
-        state_modifier=system,
+        prompt=system,
         checkpointer=_checkpointer,
     )
 

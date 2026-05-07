@@ -46,7 +46,7 @@ def fleet_analyst_invoke(query: str) -> str:
     agent = create_react_agent(
         model=_get_llm(),
         tools=_build_tools(),
-        state_modifier=SYSTEM_PROMPT,
+        prompt=SYSTEM_PROMPT,
     )
     result = agent.invoke({"messages": [{"role": "user", "content": query}]})
     return result["messages"][-1].content
