@@ -17,6 +17,7 @@ build/
 # Data
 data/*.xlsx
 data/*.csv
+*.csv
 
 # Memory / DB (generated at runtime)
 backend/memory.db
